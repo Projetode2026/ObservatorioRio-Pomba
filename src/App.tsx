@@ -37,18 +37,6 @@ export default function App() {
 
         {currentTab === 'mapa' && (
           <div className="space-y-6">
-            <div className="max-w-3xl">
-              <span className="font-mono text-xs text-[#125575] uppercase tracking-wider block font-semibold">
-                Pontos de coleta
-              </span>
-              <h2 className="font-display text-3xl sm:text-4xl font-semibold text-[#0e2b1c] mt-1">
-                Mapa do monitoramento
-              </h2>
-              <p className="text-sm sm:text-base text-[#48584f] mt-1.5 leading-relaxed">
-                Um retrato esquemático do trecho monitorado do Rio Pomba, do ponto mais preservado ao mais urbanizado. Toque em um ponto para ver seus dados mais recentes.
-              </p>
-            </div>
-
             <RiverMap
               selectedPointId={selectedPointId}
               onSelectPoint={(ptId) => setSelectedPointId(ptId)}
@@ -61,13 +49,13 @@ export default function App() {
           <div className="space-y-6">
             <div className="max-w-3xl">
               <span className="font-mono text-xs text-[#125575] uppercase tracking-wider block font-semibold">
-                Jogo educativo
+                Ictiofauna e Biodiversidade
               </span>
               <h2 className="font-display text-3xl sm:text-4xl font-semibold text-[#0e2b1c] mt-1">
-                Pesca Interativa
+                Peixes do Rio Pomba
               </h2>
               <p className="text-sm sm:text-base text-[#48584f] mt-1.5 leading-relaxed">
-                Espere o peixe fisgar a isca e toque no botão na hora certa para conhecer as espécies que vivem no Rio Pomba. O objetivo aqui é conhecer, não capturar de verdade — nada de pesca predatória.
+                Consulte as 14 espécies reais de peixes catalogadas no Rio Pomba, seus nomes populares, classificação científica e curiosidades registradas.
               </p>
             </div>
 
@@ -78,7 +66,7 @@ export default function App() {
         {currentTab === 'sobre' && <AboutView />}
       </main>
 
-      {/* Environmental & Academic Footer */}
+      {/* Environmental and Academic Footer */}
       <Footer onSelectTab={(tab) => setCurrentTab(tab)} />
     </div>
   );

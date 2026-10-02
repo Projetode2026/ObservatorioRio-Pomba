@@ -1,7 +1,11 @@
 import React from 'react';
 import { PointId } from '../types';
-import { POINTS, PARAM_DEF, PARAM_ORDER, latestVal, statusOf } from '../data/riverData';
-import { ArrowRight } from 'lucide-react';
+import { POINTS, REAL_LATEST_DATA } from '../data/riverData';
+import {
+  ArrowRight,
+  MapPin,
+} from 'lucide-react';
+import { InteractiveSatelliteMap } from './InteractiveSatelliteMap';
 
 interface RiverMapProps {
   selectedPointId: PointId;
@@ -14,236 +18,136 @@ export const RiverMap: React.FC<RiverMapProps> = ({
   onSelectPoint,
   onNavigateToMonitoring,
 }) => {
-  const pt = POINTS.find((p) => p.id === selectedPointId) || POINTS[0];
-
-  let critCount = 0;
-  let attnCount = 0;
-  PARAM_ORDER.forEach((pk) => {
-    const s = statusOf(pk, latestVal(pk, pt.id));
-    if (s === 'crit') critCount++;
-    else if (s === 'attn') attnCount++;
-  });
-
-  const conditionText =
-    critCount > 0
-      ? 'Um ou mais parâmetros fora da faixa recomendada — acompanhamento prioritário.'
-      : attnCount >= 3
-      ? 'Parâmetros próximos ao limite recomendado — vale observar a evolução.'
-      : 'Parâmetros dentro da faixa esperada para o trecho.';
-
-  const rows = PARAM_ORDER.map((pk) => {
-    const def = PARAM_DEF[pk];
-    const v = latestVal(pk, pt.id);
-    return {
-      pk,
-      name: def.name,
-      value: v.toFixed(def.decimals) + (def.unit ? ' ' + def.unit : ''),
-    };
-  });
+  const currentPoint = POINTS.find((p) => p.id === selectedPointId) || POINTS[0];
+  const stationReal = REAL_LATEST_DATA[currentPoint.id];
 
   return (
-    <div className="space-y-4">
-      {/* Mobile/Tablet Quick Station Bar (Screens < lg) */}
-      <div className="lg:hidden grid grid-cols-3 gap-2">
-        {POINTS.map((p) => {
-          const isSelected = p.id === selectedPointId;
-          return (
-            <button
-              key={p.id}
-              onClick={() => onSelectPoint(p.id)}
-              className={`py-2 px-2 text-center rounded-xl text-xs transition-all cursor-pointer flex flex-col items-center gap-0.5 touch-manipulation border ${
-                isSelected
-                  ? 'bg-[#164a2f] text-white border-[#164a2f] shadow-xs'
-                  : 'bg-white text-[#48584f] border-[#dbe4dd] hover:bg-[#f5f8f4]'
-              }`}
-            >
-              <span className="font-mono font-bold text-xs">{p.short}</span>
-              <span className="truncate max-w-full text-[11px] leading-tight">{p.name.split(' ')[0]}</span>
-            </button>
-          );
-        })}
+    <div className="space-y-6">
+      {/* Top Banner do Mapa */}
+      <div className="bg-white border border-[#dbe4dd] rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+          <span className="font-mono text-xs text-[#125575] font-semibold uppercase tracking-wider block mb-1">
+            Mapeamento · Rio Pomba
+          </span>
+          <h3 className="font-display font-bold text-xl sm:text-2xl text-[#0e2b1c]">
+            Mapa dos Pontos de Monitoramento
+          </h3>
+          <p className="text-xs sm:text-sm text-[#48584f] mt-1 max-w-2xl leading-relaxed">
+            Localização e distribuição dos 5 pontos monitorados ao longo do Rio Pomba. Clique diretamente nos marcadores no mapa ou nos botões para inspecionar os parâmetros analíticos de cada estação.
+          </p>
+        </div>
       </div>
 
+      {/* Grid Principal: Mapa de Satélite com Alfinetes à Esquerda + Ficha do Ponto Selecionado à Direita */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
-        {/* Map Card - ONLY THE RIVER AND THE POINTS */}
-        <div className="lg:col-span-7 bg-white border border-[#dbe4dd] rounded-xl sm:rounded-2xl p-4 sm:p-6 relative overflow-hidden shadow-xs">
-          <div className="text-[11px] sm:text-xs font-mono text-[#7c8d83] mb-2 sm:mb-3 flex items-center justify-between">
-            <span>Esquema hidrográfico</span>
-            <span className="text-[#125575]">Toque em um ponto para selecionar</span>
+        {/* Painel com o Mapa Interativo de Alfinetes e Seleção dos Pontos */}
+        <div className="lg:col-span-7 space-y-4">
+          <div className="bg-white border border-[#dbe4dd] rounded-2xl p-4 sm:p-5 shadow-xs space-y-3">
+            <div className="flex items-center justify-between border-b border-[#e9efe9] pb-3">
+              <span className="text-xs font-mono font-semibold text-[#0e2b1c] uppercase tracking-wider">
+                Imagem de Satélite dos Pontos
+              </span>
+              <span className="text-[11px] font-mono text-[#125575] bg-[#eef4f0] px-2.5 py-1 rounded-md font-semibold">
+                Rio Pomba · MG
+              </span>
+            </div>
+
+            {/* Componente Interativo com Marcadores nos Locais Exatos e Zoom no Ponto Ativo no PC */}
+            <InteractiveSatelliteMap
+              selectedPointId={selectedPointId}
+              onSelectPoint={onSelectPoint}
+              zoomOnDesktop={true}
+            />
+
+            <div className="text-[11px] font-mono text-[#52705e] text-center pt-0.5">
+              5 pontos monitorados ao longo da calha do Rio Pomba
+            </div>
           </div>
 
-          <svg viewBox="0 0 640 420" className="w-full h-auto block select-none touch-manipulation" fill="none">
-            {/* River Main Channel */}
-            <path
-              d="M40 60C120 90 60 150 140 175C220 200 150 260 230 285C310 310 260 360 600 360"
-              stroke="#3a91b6"
-              strokeWidth="16"
-              strokeLinecap="round"
-              fill="none"
-              opacity="0.65"
-            />
-            {/* River Center Accent */}
-            <path
-              d="M40 60C120 90 60 150 140 175C220 200 150 260 230 285C310 310 260 360 600 360"
-              stroke="#8fc7dd"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              fill="none"
-              opacity="0.8"
-            />
+          {/* Seleção Rápida dos Pontos */}
+          <div className="bg-white border border-[#dbe4dd] rounded-2xl p-4 shadow-xs space-y-2">
+            <span className="text-[11px] font-mono uppercase text-[#7c8d83] font-semibold block tracking-wider">
+              Selecione o Ponto para Consultar:
+            </span>
 
-            {/* Marker P1 */}
-            <g
-              className="cursor-pointer group touch-manipulation"
-              onClick={() => onSelectPoint('p1')}
-              transform="translate(140,175)"
-            >
-              {/* Invisible large touch target for phones */}
-              <circle r="36" fill="transparent" />
-              <circle
-                r="22"
-                fill="none"
-                stroke={selectedPointId === 'p1' ? '#2c8a5b' : 'rgba(58,145,182,0.35)'}
-                strokeWidth={selectedPointId === 'p1' ? '3' : '1.5'}
-              />
-              <circle
-                r="9.5"
-                fill={selectedPointId === 'p1' ? '#2c8a5b' : '#3a91b6'}
-                stroke="#ffffff"
-                strokeWidth="2"
-              />
-              <text
-                x="18"
-                y="-12"
-                fill="#0e2b1c"
-                className="font-mono text-sm sm:text-base font-bold select-none"
-              >
-                P1
-              </text>
-            </g>
+            <div className="grid grid-cols-5 gap-2">
+              {POINTS.map((p) => {
+                const isSelected = p.id === selectedPointId;
 
-            {/* Marker P2 */}
-            <g
-              className="cursor-pointer group touch-manipulation"
-              onClick={() => onSelectPoint('p2')}
-              transform="translate(230,285)"
-            >
-              {/* Invisible large touch target for phones */}
-              <circle r="36" fill="transparent" />
-              <circle
-                r="22"
-                fill="none"
-                stroke={selectedPointId === 'p2' ? '#2c8a5b' : 'rgba(58,145,182,0.35)'}
-                strokeWidth={selectedPointId === 'p2' ? '3' : '1.5'}
-              />
-              <circle
-                r="9.5"
-                fill={selectedPointId === 'p2' ? '#2c8a5b' : '#3a91b6'}
-                stroke="#ffffff"
-                strokeWidth="2"
-              />
-              <text
-                x="18"
-                y="-12"
-                fill="#0e2b1c"
-                className="font-mono text-sm sm:text-base font-bold select-none"
-              >
-                P2
-              </text>
-            </g>
-
-            {/* Marker P3 */}
-            <g
-              className="cursor-pointer group touch-manipulation"
-              onClick={() => onSelectPoint('p3')}
-              transform="translate(430,350)"
-            >
-              {/* Invisible large touch target for phones */}
-              <circle r="36" fill="transparent" />
-              <circle
-                r="22"
-                fill="none"
-                stroke={selectedPointId === 'p3' ? '#2c8a5b' : 'rgba(58,145,182,0.35)'}
-                strokeWidth={selectedPointId === 'p3' ? '3' : '1.5'}
-              />
-              <circle
-                r="9.5"
-                fill={selectedPointId === 'p3' ? '#2c8a5b' : '#3a91b6'}
-                stroke="#ffffff"
-                strokeWidth="2"
-              />
-              <text
-                x="18"
-                y="-12"
-                fill="#0e2b1c"
-                className="font-mono text-sm sm:text-base font-bold select-none"
-              >
-                P3
-              </text>
-            </g>
-          </svg>
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => onSelectPoint(p.id)}
+                    className={`py-2.5 px-1.5 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center justify-between ${
+                      isSelected
+                        ? 'bg-[#164a2f] text-white border-[#164a2f] shadow-sm'
+                        : 'bg-[#fcfdfc] text-[#33463b] border-[#e2ece4] hover:bg-[#f2f7f3]'
+                    }`}
+                  >
+                    <span className="font-mono text-xs font-bold">P{p.order}</span>
+                    <span className="text-[10px] sm:text-xs font-medium truncate max-w-full">
+                      {p.name.replace('Ponte de ', '').replace('Ponte do ', '').replace('Ponte da ', '').replace('Ponte ', '')}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
-        {/* Point List & Point Detail */}
+        {/* Ficha Detalhada do Ponto Selecionado */}
         <div className="lg:col-span-5 space-y-4">
-          {/* Point List (Desktop) */}
-          <div className="hidden lg:flex flex-col gap-2.5">
-            {POINTS.map((p) => {
-              const isSelected = p.id === selectedPointId;
-              return (
-                <button
-                  key={p.id}
-                  onClick={() => onSelectPoint(p.id)}
-                  className={`flex items-center gap-3 w-full text-left bg-white border rounded-xl p-3.5 transition-all cursor-pointer shadow-xs ${
-                    isSelected
-                      ? 'border-[#125575] bg-[#e2f0f5]/30'
-                      : 'border-[#dbe4dd] hover:border-[#3a91b6]'
-                  }`}
-                >
-                  <div className="w-7 h-7 rounded-full flex items-center justify-center font-mono text-xs font-semibold shrink-0 bg-[#164a2f] text-white">
-                    {p.short}
-                  </div>
-                  <span className="text-sm font-medium text-[#0e2b1c]">{p.name}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Point Detail Card */}
-          <div className="bg-white border border-[#dbe4dd] rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-xs space-y-4">
-            <div>
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg sm:text-xl font-display font-semibold text-[#0e2b1c]">
-                  {pt.name}
-                </h3>
-                <span className="font-mono text-xs px-2 py-0.5 rounded bg-[#f0f4ee] text-[#164a2f] font-semibold">
-                  {pt.short}
+          <div className="bg-white border border-[#dbe4dd] rounded-2xl p-5 sm:p-6 shadow-xs space-y-5">
+            <div className="flex items-start justify-between gap-3 border-b border-[#e9efe9] pb-4">
+              <div>
+                <span className="font-mono text-xs text-[#125575] font-semibold uppercase tracking-wider">
+                  Ponto P{currentPoint.order}
+                </span>
+                <h4 className="font-display font-bold text-xl text-[#0e2b1c] mt-0.5 flex items-center gap-2">
+                  <MapPin className="w-5 h-5 text-[#164a2f]" />
+                  <span>{currentPoint.name}</span>
+                </h4>
+                <span className="font-mono text-xs text-[#52705e] block mt-0.5">
+                  Localização: {currentPoint.desc}
                 </span>
               </div>
-              <div className="font-mono text-xs text-[#7c8d83] mt-1">
-                Rio Pomba · trecho {pt.profile}
-              </div>
-              <p className="mt-2.5 sm:mt-3 text-xs sm:text-sm text-[#48584f] leading-relaxed">
-                {pt.desc} {conditionText}
-              </p>
             </div>
 
-            {/* Mini Table */}
-            <div className="border-t border-[#e9efe9] divide-y divide-[#e9efe9]">
-              {rows.map((r) => (
-                <div key={r.pk} className="flex justify-between py-2 text-xs sm:text-sm">
-                  <span className="text-[#48584f]">{r.name}</span>
-                  <span className="font-mono font-semibold text-[#0e2b1c]">{r.value}</span>
+            {/* Parâmetros Analíticos da 1ª Coleta */}
+            <div className="space-y-3">
+              <span className="text-xs font-mono font-semibold uppercase text-[#125575] tracking-wider block">
+                Últimos Parâmetros Analíticos Registrados:
+              </span>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="bg-[#f5f8f5] border border-[#dbe4dd] p-3 rounded-xl">
+                  <span className="text-[10px] font-mono text-[#52705e] block">pH da Água</span>
+                  <span className="font-mono font-bold text-lg text-[#0e2b1c]">{stationReal.ph}</span>
                 </div>
-              ))}
+
+                <div className="bg-[#f5f8f5] border border-[#dbe4dd] p-3 rounded-xl">
+                  <span className="text-[10px] font-mono text-[#52705e] block">Oxigênio Dissolvido</span>
+                  <span className="font-mono font-bold text-lg text-[#164a2f]">{stationReal.od} mg/L</span>
+                </div>
+
+                <div className="bg-[#f5f8f5] border border-[#dbe4dd] p-3 rounded-xl">
+                  <span className="text-[10px] font-mono text-[#52705e] block">Turbidez</span>
+                  <span className="font-mono font-bold text-lg text-[#125575]">{stationReal.turbidez} NTU</span>
+                </div>
+
+                <div className="bg-[#f5f8f5] border border-[#dbe4dd] p-3 rounded-xl">
+                  <span className="text-[10px] font-mono text-[#52705e] block">Condutividade</span>
+                  <span className="font-mono font-bold text-lg text-[#0e2b1c]">{stationReal.condutividade} µS/cm</span>
+                </div>
+              </div>
             </div>
 
-            {/* Button: Ver histórico completo */}
+            {/* Botão de Ação para Ver Tabela Completa */}
             <button
-              onClick={() => onNavigateToMonitoring(pt.id)}
-              className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold border border-[#164a2f] text-[#164a2f] hover:bg-[#c7e3d1]/30 transition-colors cursor-pointer touch-manipulation"
+              onClick={() => onNavigateToMonitoring(currentPoint.id)}
+              className="w-full py-3 px-4 rounded-xl font-display font-semibold text-sm bg-[#164a2f] text-white hover:bg-[#0e2b1c] transition-all cursor-pointer shadow-md flex items-center justify-center gap-2"
             >
-              <span>Ver histórico completo</span>
+              <span>Ver Ficha Analítica Completa</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>

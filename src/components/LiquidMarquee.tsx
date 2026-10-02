@@ -34,7 +34,7 @@ export const LiquidMarquee: React.FC = () => {
         }
         .marquee-content {
           display: inline-block;
-          animation: marquee 35s linear infinite;
+          animation: marquee 22s linear infinite;
         }
         @keyframes marquee {
           from { transform: translateX(100%); }
@@ -44,7 +44,7 @@ export const LiquidMarquee: React.FC = () => {
 
       <div className="marquee-container">
         <div className="marquee-content liquid-text">
-          RIO POMBA · DADOS ABERTOS · PRESERVAÇÃO AMBIENTAL · BIOINDICADORES · RIO POMBA · DADOS ABERTOS · PRESERVAÇÃO AMBIENTAL · BIOINDICADORES
+          RIO POMBA · PRESERVAÇÃO AMBIENTAL · BIOINDICADORES · RIO POMBA · PRESERVAÇÃO AMBIENTAL · BIOINDICADORES
         </div>
       </div>
     </>

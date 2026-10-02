@@ -1,4 +1,4 @@
-export type PointId = 'p1' | 'p2' | 'p3';
+export type PointId = 'p1' | 'p2' | 'p3' | 'p4' | 'p5';
 
 export interface Point {
   id: PointId;
@@ -6,10 +6,23 @@ export interface Point {
   short: string;
   order: number;
   desc: string;
-  profile: 'preservado' | 'intermediario' | 'urbano';
+  profile: 'rural' | 'preservado' | 'intermediario' | 'urbano' | 'jusante';
 }
 
-export type ParamKey = 'ph' | 'temp' | 'od' | 'turbidez' | 'condutividade' | 'nitrogenio' | 'fosforo';
+export type ParamKey =
+  | 'ph'
+  | 'condutividade'
+  | 'turbidez'
+  | 'od'
+  | 'solidos_totais'
+  | 'dqo'
+  | 'dbo'
+  | 'nitrogenio'
+  | 'fosforo'
+  | 'amonia'
+  | 'nitrito'
+  | 'nitrato'
+  | 'cor_aparente';
 
 export type StatusLevel = 'good' | 'attn' | 'crit';
 
@@ -39,14 +52,13 @@ export interface Fish {
   id: string;
   name: string;
   sci: string;
+  origem: string; // 'Nativa', 'Nativa (ameaçada)', 'Exótica (invasora)'
+  curiosidades: string[]; // Lista de curiosidades exatas do arquivo
   color: string;
   accent: string;
-  habitat: string;
-  feeding: string;
-  eco: string;
-  curiosity: string;
   status: StatusLevel;
   conservation: string;
   weight: number;
   invasive?: boolean;
+  photo?: string;
 }

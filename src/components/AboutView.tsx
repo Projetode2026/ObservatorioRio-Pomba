@@ -1,4 +1,5 @@
 import React from 'react';
+import { POINTS } from '../data/riverData';
 
 export const AboutView: React.FC = () => {
   return (
@@ -6,13 +7,13 @@ export const AboutView: React.FC = () => {
       {/* Header */}
       <div className="border-b border-[#dbe4dd] pb-4 sm:pb-6">
         <span className="font-mono text-xs text-[#125575] uppercase tracking-wider font-semibold block">
-          Documentação
+          Documentação e Metodologia
         </span>
         <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-semibold text-[#0e2b1c] mt-1 sm:mt-2">
           Sobre o projeto
         </h2>
         <p className="text-sm sm:text-[15.5px] text-[#48584f] mt-1.5 sm:mt-2 max-w-3xl leading-relaxed">
-          O que este observatório se propõe a fazer, como o trabalho é conduzido e onde ele pode chegar.
+          Acompanhamento contínuo da qualidade da água e conservação da biodiversidade aquática do Rio Pomba na Zona da Mata mineira.
         </p>
       </div>
 
@@ -25,7 +26,7 @@ export const AboutView: React.FC = () => {
               Objetivo
             </h4>
             <p className="text-[14.8px] text-[#48584f] leading-relaxed">
-              Acompanhar de forma contínua a qualidade físico-química da água do Rio Pomba e comunicar, de maneira acessível, a relação entre essas condições e a biodiversidade aquática associada à Mata Atlântica na região.
+              Acompanhar de forma sistemática a qualidade da água do Rio Pomba e apresentar os dados de monitoramento das coletas nos pontos ao longo de seu curso.
             </p>
           </div>
 
@@ -34,16 +35,16 @@ export const AboutView: React.FC = () => {
               Área de estudo
             </h4>
             <p className="text-[14.8px] text-[#48584f] leading-relaxed">
-              Um trecho do Rio Pomba na Zona da Mata de Minas Gerais, abrangendo áreas com diferentes graus de conservação da vegetação ripária, da mais preservada até trechos urbanos.
+              Trecho do Rio Pomba na Zona da Mata de Minas Gerais abrangendo os 5 pontos de monitoramento: Ponte da Fazenda Sinimbu, Ponte de Camargo, Ponte Metálica, Ponte da Empa e Distrito de Aracati.
             </p>
           </div>
 
           <div className="space-y-2">
             <h4 className="font-mono text-xs text-[#125575] uppercase tracking-wider font-semibold">
-              Metodologia
+              Metodologia de Coleta e Análise
             </h4>
             <p className="text-[14.8px] text-[#48584f] leading-relaxed">
-              Coletas periódicas de parâmetros físico-químicos (pH, temperatura, oxigênio dissolvido, turbidez, condutividade elétrica, nitrogênio e fósforo) em pontos fixos, com registro histórico para análise de tendências ao longo do tempo. A estrutura da plataforma foi pensada para receber dados reais assim que estiverem disponíveis, substituindo os valores demonstrativos atuais.
+              Coletas nos pontos fixos de monitoramento com análise de parâmetros laboratoriais (pH, condutividade, sólidos totais, turbidez, DQO, DBO, nitrogênio, fósforo, amônia, nitrito, nitrato, oxigênio, cor aparente, coliformes e E. coli).
             </p>
           </div>
         </div>
@@ -52,57 +53,30 @@ export const AboutView: React.FC = () => {
         <div className="space-y-8">
           <div className="space-y-2.5">
             <h4 className="font-mono text-xs text-[#125575] uppercase tracking-wider font-semibold">
-              Pontos de monitoramento
+              Pontos de Monitoramento
             </h4>
             <ul className="space-y-2.5 text-[14.3px] text-[#48584f]">
-              <li className="flex gap-2.5 items-start">
-                <span className="font-mono font-semibold text-[#164a2f] shrink-0 mt-0.5">01</span>
-                <span>
-                  <strong className="text-[#0e2b1c]">Ponte de Camargo</strong> — trecho de referência, com maior cobertura de mata ciliar.
-                </span>
-              </li>
-              <li className="flex gap-2.5 items-start">
-                <span className="font-mono font-semibold text-[#164a2f] shrink-0 mt-0.5">02</span>
-                <span>
-                  <strong className="text-[#0e2b1c]">Balneário Municipal</strong> — ponto intermediário, de uso recreativo.
-                </span>
-              </li>
-              <li className="flex gap-2.5 items-start">
-                <span className="font-mono font-semibold text-[#164a2f] shrink-0 mt-0.5">03</span>
-                <span>
-                  <strong className="text-[#0e2b1c]">Ponte da Empa / Bairro São Vicente</strong> — trecho urbano, mais próximo de áreas de maior ocupação.
-                </span>
-              </li>
+              {POINTS.map((p) => (
+                <li key={p.id} className="flex gap-2.5 items-start">
+                  <span className="font-mono font-semibold text-[#164a2f] shrink-0 mt-0.5">
+                    {p.order}
+                  </span>
+                  <span>
+                    <strong className="text-[#0e2b1c]">{p.name}</strong>
+                  </span>
+                </li>
+              ))}
             </ul>
           </div>
 
           <div className="space-y-2">
             <h4 className="font-mono text-xs text-[#125575] uppercase tracking-wider font-semibold">
-              Importância do Rio Pomba
+              Fontes dos Dados
             </h4>
             <p className="text-[14.8px] text-[#48584f] leading-relaxed">
-              Além de abastecer comunidades ao longo de seu curso, o rio sustenta ecossistemas aquáticos e ripários que fazem parte do bioma Mata Atlântica, um dos mais ameaçados e biodiversos do planeta.
+              Os dados apresentados são oriundos das análises laboratoriais da 1ª Coleta nos 5 pontos e do Relatório Histórico de 09/10/2025 (Ponte de Camargo, Ponte Metálica e Ponte da Empa).
             </p>
           </div>
-
-          <div className="space-y-2">
-            <h4 className="font-mono text-xs text-[#125575] uppercase tracking-wider font-semibold">
-              Urbanização, mata ciliar e qualidade da água
-            </h4>
-            <p className="text-[14.8px] text-[#48584f] leading-relaxed">
-              A vegetação ao longo das margens funciona como filtro natural, retendo sedimentos e nutrientes antes que cheguem ao rio. Onde essa vegetação é reduzida — geralmente em áreas mais urbanizadas — tende-se a observar maior turbidez, maior concentração de nutrientes e menor diversidade de espécies aquáticas, refletindo diretamente no que é medido nos pontos de coleta.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Institutional Placeholder Box */}
-      <div className="space-y-2 pt-2 border-t border-[#dbe4dd]">
-        <h4 className="font-mono text-xs text-[#125575] uppercase tracking-wider font-semibold">
-          Pesquisadores, instituição e parceiros
-        </h4>
-        <div className="border border-dashed border-[#dbe4dd] rounded-xl p-5 text-sm text-[#7c8d83] bg-[#fbfcfa] leading-relaxed">
-          Espaço reservado para informações sobre a equipe de pesquisa, instituição responsável, parceiros institucionais e referências científicas utilizadas no projeto. Este conteúdo será adicionado nas próximas atualizações da plataforma.
         </div>
       </div>
     </div>

@@ -11,9 +11,12 @@ export const FishVector: React.FC<FishVectorProps> = ({ fish, className = 'w-ful
   if (!isDiscovered) {
     return (
       <svg viewBox="0 0 100 60" className={className} xmlns="http://www.w3.org/2000/svg">
-        <ellipse cx="45" cy="30" rx="30" ry="16" fill="#c8d2cb" />
-        <path d="M15 30 L0 16 L0 44 Z" fill="#c8d2cb" />
-        <circle cx="64" cy="26" r="3" fill="#eef2ef" />
+        <rect width="100" height="60" rx="8" fill="#e9efe9" />
+        {/* Cadeado / Silhueta Oculta */}
+        <circle cx="50" cy="27" r="9" fill="#9db4a3" />
+        <rect x="44" y="27" width="12" height="12" rx="2" fill="#7a9481" />
+        <path d="M47 27 V23 A3 3 0 0 1 53 23 V27" stroke="#ffffff" strokeWidth="1.5" fill="none" />
+        <circle cx="50" cy="32" r="1.5" fill="#ffffff" />
       </svg>
     );
   }

@@ -14,12 +14,12 @@ export const Footer: React.FC<FooterProps> = () => {
             Observatório Rio Pomba
           </strong>
           <span className="text-xs text-[#52705e] font-mono mt-0.5">
-            projeto de monitoramento ambiental e educação sobre a Mata Atlântica
+            dados e qualidade da água
           </span>
         </div>
 
         <p className="text-xs font-mono text-[#52705e] max-w-md leading-relaxed">
-          Plataforma demonstrativa. Os dados de monitoramento exibidos são provisórios e serão substituídos pelos dados reais coletados em campo à medida que forem disponibilizados.
+          Dados analíticos obtidos em ensaios laboratoriais e relatórios ambientais da bacia do Rio Pomba.
         </p>
       </div>
     </footer>

@@ -15,7 +15,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, onSelectTab }) => {
     { key: 'inicio', label: 'Início' },
     { key: 'monitoramento', label: 'Monitoramento' },
     { key: 'mapa', label: 'Mapa' },
-    { key: 'pesca', label: 'Pesca Interativa' },
+    { key: 'pesca', label: 'Peixes e Pesca' },
     { key: 'sobre', label: 'Sobre o Projeto' },
   ];
 
@@ -57,7 +57,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, onSelectTab }) => {
               Observatório Rio Pomba
             </span>
             <span className="font-mono text-[11px] text-[#125575] tracking-normal">
-              monitoramento &amp; biodiversidade
+              monitoramento e biodiversidade
             </span>
           </div>
         </button>

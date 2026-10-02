@@ -1,0 +1,8 @@
+# Imagem do Mapa
+
+Coloque a imagem do mapa com o nome:
+`mapa.png`
+
+diretamente nesta pasta (`/public/mapa.png`).
+
+O sistema carregará automaticamente o arquivo `/mapa.png` no Início e na aba Mapa.
