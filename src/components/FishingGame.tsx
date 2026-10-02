@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Fish } from '../types';
 import { FISH } from '../data/riverData';
 import { FishVector } from './FishVector';
+import imgRiverWaterSurface from '../assets/images/river_water_surface_1790979632257.jpg';
 import {
   BookOpen,
   Check,
@@ -23,6 +24,56 @@ import {
   Zap,
   Clock,
 } from 'lucide-react';
+
+// ====================================================================
+// COMPONENTE COM FEEDBACK VISUAL DE CARREGAMENTO PARA FOTOS DE PEIXES
+// ====================================================================
+const FishImageWithLoader: React.FC<{
+  src?: string;
+  alt: string;
+  className?: string;
+  fallbackVector?: React.ReactNode;
+}> = ({ src, alt, className = 'w-full h-full object-contain', fallbackVector }) => {
+  const [loaded, setLoaded] = useState<boolean>(true);
+  const [hasError, setHasError] = useState<boolean>(false);
+  const imgRef = useRef<HTMLImageElement | null>(null);
+
+  useEffect(() => {
+    if (!src) return;
+    setHasError(false);
+    if (imgRef.current && imgRef.current.complete) {
+      setLoaded(true);
+    }
+  }, [src]);
+
+  if (!src || hasError) {
+    return <>{fallbackVector || null}</>;
+  }
+
+  return (
+    <div className="relative w-full h-full flex items-center justify-center">
+      {!loaded && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#f0f4ee] z-10 space-y-1.5">
+          <div className="w-5 h-5 border-2 border-[#164a2f] border-t-transparent rounded-full animate-spin" />
+          <span className="text-[10px] font-mono text-[#164a2f] font-semibold">Carregando foto...</span>
+        </div>
+      )}
+      <img
+        ref={imgRef}
+        src={src}
+        alt={alt}
+        loading="eager"
+        decoding="async"
+        className={`${className} transition-opacity duration-200 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+        onLoad={() => setLoaded(true)}
+        onError={() => {
+          setLoaded(true);
+          setHasError(true);
+        }}
+      />
+    </div>
+  );
+};
 
 // ====================================================================
 // SINTETIZADOR DE ÁUDIO VIA WEB AUDIO API (Sem arquivos externos)
@@ -157,6 +208,16 @@ export const FishingGame: React.FC = () => {
     }
   }, [caughtIds]);
 
+  // Pré-carregamento automático de todas as fotos dos peixes para abertura instantânea
+  useEffect(() => {
+    FISH.forEach((f) => {
+      if (f.photo) {
+        const img = new Image();
+        img.src = f.photo;
+      }
+    });
+  }, []);
+
   // Fases do jogo
   const [phase, setPhase] = useState<
     'idle' | 'casting' | 'waiting' | 'nibbling' | 'biting' | 'caught' | 'escaped'
@@ -173,10 +234,33 @@ export const FishingGame: React.FC = () => {
   const [selectedFish, setSelectedFish] = useState<Fish | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
+  // Tempo dinâmico de janela de fisgada baseado na raridade e peso da espécie
+  const getBiteWindowDuration = (fish: Fish): number => {
+    if (fish.weight === 1) return 820; // Espécie Crítica/Rara (Surubim, Cascudo-leiteiro): 820ms
+    if (fish.weight === 2) return 1050; // Ameaçada/Invasora (Pirapitinga, Tucunaré): 1050ms
+    if (fish.weight === 3) return 1450; // Moderada (Piau, Jundiá, Sarapó, Curimatá): 1450ms
+    return 1950; // Comum (Lambaris, Traíra, Cará): 1950ms
+  };
+
+  const getUpcomingFish = (): Fish => {
+    const uncollected = FISH.filter((f) => !caughtIds.includes(f.id));
+    if (uncollected.length > 0 && Math.random() < 0.7) {
+      return uncollected[Math.floor(Math.random() * uncollected.length)];
+    }
+    const totalWeight = FISH.reduce((acc, f) => acc + f.weight, 0);
+    let rand = Math.random() * totalWeight;
+    for (const f of FISH) {
+      if (rand < f.weight) return f;
+      rand -= f.weight;
+    }
+    return FISH[0];
+  };
+
   // Refs de temporizadores e animação de tensão
   const timerRef = useRef<number | null>(null);
   const biteWindowRef = useRef<number | null>(null);
   const tensionIntervalRef = useRef<number | null>(null);
+  const targetFishRef = useRef<Fish | null>(null);
 
   useEffect(() => {
     sfx.enabled = audioEnabled;
@@ -222,14 +306,24 @@ export const FishingGame: React.FC = () => {
 
   // Bote / Puxada
   const startBiting = () => {
+    // Escolhe antecipadamente a espécie que está puxando a linha
+    const incomingFish = getUpcomingFish();
+    targetFishRef.current = incomingFish;
+
+    const duration = getBiteWindowDuration(incomingFish);
+    const isRare = incomingFish.weight <= 2;
+
     setPhase('biting');
-    setMessage('MORDIDA FORTE! FISGUE AGORA ANTES QUE ELE ESCAPE!');
+    setMessage(
+      isRare
+        ? `PUXÃO RÁPIDO E PESADO! Peixe raro na linha, fisgue imediatamente!`
+        : 'MORDIDA NA ISCA! Fisgue agora antes que o peixe escape!'
+    );
     sfx.playBite();
 
-    // Barra de tensão decrescente durante a janela de fisgada (1.4 segundos)
+    // Barra de tensão decrescente durante a janela de fisgada dinâmica
     setTensionPercent(100);
     const startTime = Date.now();
-    const duration = 1400;
 
     if (tensionIntervalRef.current) clearInterval(tensionIntervalRef.current);
     tensionIntervalRef.current = window.setInterval(() => {
@@ -239,7 +333,7 @@ export const FishingGame: React.FC = () => {
       if (remaining <= 0) {
         if (tensionIntervalRef.current) clearInterval(tensionIntervalRef.current);
       }
-    }, 30);
+    }, 20);
 
     biteWindowRef.current = window.setTimeout(() => {
       handleEscape();
@@ -266,25 +360,7 @@ export const FishingGame: React.FC = () => {
     if (biteWindowRef.current) clearTimeout(biteWindowRef.current);
     if (tensionIntervalRef.current) clearInterval(tensionIntervalRef.current);
 
-    // Sorteio ponderado dos peixes
-    const uncollected = FISH.filter((f) => !caughtIds.includes(f.id));
-    let chosenFish: Fish;
-
-    // Se ainda há peixes não pescados, dá 70% de chance de pescar um inédito
-    if (uncollected.length > 0 && Math.random() < 0.7) {
-      chosenFish = uncollected[Math.floor(Math.random() * uncollected.length)];
-    } else {
-      const totalWeight = FISH.reduce((acc, f) => acc + f.weight, 0);
-      let rand = Math.random() * totalWeight;
-      chosenFish = FISH[0];
-      for (const f of FISH) {
-        if (rand < f.weight) {
-          chosenFish = f;
-          break;
-        }
-        rand -= f.weight;
-      }
-    }
+    const chosenFish = targetFishRef.current || getUpcomingFish();
 
     setRecentFish(chosenFish);
     setPhase('caught');
@@ -433,51 +509,102 @@ export const FishingGame: React.FC = () => {
       {/* ==================================================================== */}
       {activeTab === 'jogo' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
-          {/* Cenário Interativo do Trapiche no Rio Pomba */}
+          {/* Cenário de Água Clara e Realista do Rio Pomba */}
           <div className="lg:col-span-7 space-y-4">
-            <div className="relative rounded-2xl overflow-hidden min-h-[380px] sm:min-h-[490px] bg-gradient-to-b from-[#7cbcc8] via-[#5da2b3] to-[#1d5c70] shadow-md border-2 border-[#8ec7d3] select-none flex flex-col justify-between p-3.5 sm:p-6">
-              {/* Céu, Vegetação de Mata Ciliar e Montanhas */}
-              <div className="absolute inset-0 pointer-events-none">
-                <svg
-                  className="w-full h-40 absolute top-0 left-0 opacity-40"
-                  viewBox="0 0 600 160"
-                  preserveAspectRatio="none"
-                >
-                  <path d="M0 160 L60 80 L140 130 L220 50 L340 140 L450 60 L540 110 L600 80 L600 160 Z" fill="#2d6f55" />
-                  <path d="M0 160 L100 110 L190 150 L280 90 L380 150 L490 100 L600 140 L600 160 Z" fill="#1c503c" opacity="0.6" />
-                </svg>
+            <div className="relative rounded-2xl overflow-hidden h-[390px] sm:h-[470px] bg-[#1a6452] shadow-lg border-2 border-[#52a382] select-none flex flex-col justify-between p-3.5 sm:p-5">
+              {/* Imagem de Fundo de Água Clara e Transparente com Luz Solar */}
+              <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                <img
+                  src={imgRiverWaterSurface}
+                  alt="Água do Rio Pomba"
+                  className="w-full h-full object-cover object-center opacity-90 scale-105"
+                />
 
-                <div className="absolute top-16 inset-x-0 h-28 bg-gradient-to-b from-[#1c5539] via-[#216744] to-transparent opacity-85" />
+                {/* Filtro de Profundidade Cristalina com Gradiente Claro de Rio */}
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0e4b3c]/70 via-[#1e7862]/30 to-transparent" />
 
+                {/* Linhas de Correnteza e Ondulações da Água com Refração Solar */}
                 <svg
-                  className="w-full h-full absolute inset-0"
+                  className="w-full h-full absolute inset-0 opacity-50 mix-blend-screen"
                   viewBox="0 0 600 480"
                   preserveAspectRatio="none"
                 >
-                  <g stroke="#ffffff" strokeWidth="1" opacity="0.25" fill="none">
-                    <path d="M0 240 Q150 220 300 240 T600 240" />
-                    <path d="M0 290 Q150 270 300 290 T600 290" />
-                    <path d="M0 340 Q150 320 300 340 T600 340" />
-                    <path d="M0 390 Q150 370 300 390 T600 390" />
+                  {/* Ondulações de Correnteza Iluminadas */}
+                  <g stroke="#ffffff" strokeWidth="1.8" opacity="0.6" fill="none">
+                    <path d="M-50 120 Q120 100 300 120 T650 120">
+                      <animate attributeName="d" values="M-50 120 Q120 100 300 120 T650 120; M-50 125 Q120 105 300 125 T650 125; M-50 120 Q120 100 300 120 T650 120" dur="4s" repeatCount="indefinite" />
+                    </path>
+                    <path d="M-50 190 Q150 170 350 190 T650 190">
+                      <animate attributeName="d" values="M-50 190 Q150 170 350 190 T650 190; M-50 195 Q150 175 350 195 T650 195; M-50 190 Q150 170 350 190 T650 190" dur="5s" repeatCount="indefinite" />
+                    </path>
+                    <path d="M-50 260 Q120 240 300 260 T650 260">
+                      <animate attributeName="d" values="M-50 260 Q120 240 300 260 T650 260; M-50 265 Q120 245 300 265 T650 265; M-50 260 Q120 240 300 260 T650 260" dur="3.8s" repeatCount="indefinite" />
+                    </path>
+                    <path d="M-50 330 Q180 310 380 330 T650 330">
+                      <animate attributeName="d" values="M-50 330 Q180 310 380 330 T650 330; M-50 335 Q180 315 380 335 T650 335; M-50 330 Q180 310 380 330 T650 330" dur="4.2s" repeatCount="indefinite" />
+                    </path>
+                    <path d="M-50 400 Q140 380 320 400 T650 400">
+                      <animate attributeName="d" values="M-50 400 Q140 380 320 400 T650 400; M-50 405 Q140 385 320 405 T650 405; M-50 400 Q140 380 320 400 T650 400" dur="4.6s" repeatCount="indefinite" />
+                    </path>
                   </g>
 
-                  {(phase === 'waiting' || phase === 'nibbling') && (
-                    <g
-                      className={`transition-all duration-700 ${
-                        phase === 'nibbling' ? 'opacity-70 scale-105' : 'opacity-25'
-                      }`}
-                    >
+                  {/* ======================================================== */}
+                  {/* SOMBRAS DE PEIXES NADANDO SOB A SUPERFÍCIE               */}
+                  {/* ======================================================== */}
+                  {/* Sombra 1: Peixe no fundo na fase de espera */}
+                  {phase === 'waiting' && (
+                    <g opacity="0.65">
                       <path
-                        d="M260 310 Q290 300 320 310 Q305 325 290 315 Z"
-                        fill="#0b2b1d"
+                        d="M160 300 C190 290, 235 290, 265 300 C245 312, 180 312, 160 300 Z"
+                        fill="#05281e"
                       >
                         <animate
-                          attributeName="d"
-                          values="M260 310 Q290 300 320 310 Q305 325 290 315 Z; M265 312 Q295 302 325 312 Q310 327 295 317 Z; M260 310 Q290 300 320 310 Q305 325 290 315 Z"
-                          dur="3s"
+                          attributeName="transform"
+                          type="translate"
+                          values="-30,10; 50,-10; 120,5; -30,10"
+                          dur="8s"
                           repeatCount="indefinite"
                         />
                       </path>
+                      <polygon points="155,295 142,286 146,310" fill="#05281e">
+                        <animate
+                          attributeName="transform"
+                          type="translate"
+                          values="-30,10; 50,-10; 120,5; -30,10"
+                          dur="8s"
+                          repeatCount="indefinite"
+                        />
+                      </polygon>
+                    </g>
+                  )}
+
+                  {/* Sombra 2: Peixe se aproximando da boia quando mordisca */}
+                  {phase === 'nibbling' && (
+                    <g opacity="0.85" className="transition-all duration-500">
+                      <ellipse cx="300" cy="275" rx="42" ry="16" fill="#041f17" transform="rotate(-10 300 275)">
+                        <animate
+                          attributeName="rx"
+                          values="40; 45; 40"
+                          dur="1s"
+                          repeatCount="indefinite"
+                        />
+                      </ellipse>
+                      <polygon points="255,278 238,266 242,290" fill="#041f17" />
+                    </g>
+                  )}
+
+                  {/* Sombra 3: Peixe atacando a isca na mordida */}
+                  {phase === 'biting' && (
+                    <g opacity="0.95" className="transition-all duration-300">
+                      <ellipse cx="300" cy="265" rx="50" ry="20" fill="#02140e" transform="rotate(5 300 265)">
+                        <animate
+                          attributeName="cy"
+                          values="272; 260; 272"
+                          dur="0.35s"
+                          repeatCount="indefinite"
+                        />
+                      </ellipse>
+                      <polygon points="248,265 226,250 230,280" fill="#02140e" />
                     </g>
                   )}
                 </svg>
@@ -485,115 +612,129 @@ export const FishingGame: React.FC = () => {
 
               {/* HUD Superior do Cenário */}
               <div className="relative z-10 flex items-center justify-between gap-3 text-white font-mono text-xs">
-                <div className="bg-[#0e2b1c]/80 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-[#34d399]/40 flex items-center gap-2 shadow-sm">
+                <div className="bg-[#07241a]/90 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-[#34d399]/40 flex items-center gap-2 shadow-sm">
                   <Waves className="w-3.5 h-3.5 text-[#34d399]" />
-                  <span>Rio Pomba · Margem Ribeirinha</span>
+                  <span className="font-semibold text-[11px] sm:text-xs">Leito do Rio Pomba</span>
                 </div>
 
                 {streak > 1 && (
-                  <div className="bg-[#eab308] text-[#422006] font-bold px-3 py-1 rounded-full text-xs shadow-md flex items-center gap-1.5 animate-pulse">
+                  <div className="bg-[#eab308] text-[#422006] font-bold px-3 py-1 rounded-full text-xs shadow-md flex items-center gap-1.5 border border-yellow-200">
                     <Trophy className="w-3.5 h-3.5" />
                     <span>Sequência: {streak}x</span>
                   </div>
                 )}
               </div>
 
-              {/* CENTRO DO CENÁRIO: ÁGUA, BOIA E AÇÃO */}
-              <div className="relative z-10 my-auto flex flex-col items-center justify-center">
+              {/* CENTRO DO CENÁRIO: SUPERFÍCIE DO RIO, BOIA E AÇÃO */}
+              <div className="relative z-10 my-auto flex flex-col items-center justify-center py-2 sm:py-4">
                 {/* Janela de Tensão do Peixe quando está mordendo */}
                 {phase === 'biting' && (
-                  <div className="w-64 max-w-full mb-6 bg-[#0e2b1c]/90 p-3 rounded-2xl border-2 border-[#fbbf24] shadow-2xl backdrop-blur-md space-y-1.5 animate-pulse">
+                  <div className="w-64 max-w-full mb-4 bg-[#0e2b1c]/95 p-3 rounded-2xl border-2 border-[#fbbf24] shadow-2xl backdrop-blur-md space-y-1.5">
                     <div className="flex items-center justify-between text-[11px] font-mono font-bold text-white">
                       <span className="flex items-center gap-1 text-[#fbbf24]">
-                        <Zap className="w-3.5 h-3.5" />
+                        <Zap className="w-4 h-4 fill-current" />
                         <span>FISGUE AGORA!</span>
                       </span>
                       <span>{Math.ceil(tensionPercent)}%</span>
                     </div>
-                    <div className="h-2.5 bg-black/50 rounded-full overflow-hidden">
+                    <div className="h-2.5 bg-black/60 rounded-full overflow-hidden p-0.5 border border-white/20">
                       <div
-                        className="h-full bg-gradient-to-r from-[#fbbf24] via-[#f97316] to-[#ef4444] transition-all duration-75"
+                        className="h-full bg-gradient-to-r from-[#fbbf24] via-[#f97316] to-[#ef4444] rounded-full transition-all duration-75"
                         style={{ width: `${tensionPercent}%` }}
                       />
                     </div>
                   </div>
                 )}
 
-                {/* Linha e Boia */}
+                {/* Estrutura da Linha e da Boia na Superfície do Rio */}
                 <div className="relative flex flex-col items-center">
+                  {/* Linha de Pesca Vertical Transparente */}
                   {phase !== 'idle' && phase !== 'caught' && (
-                    <div className="absolute bottom-10 w-[1.5px] h-32 bg-white/70 shadow-sm" />
+                    <div className="absolute bottom-10 w-[1.5px] h-28 bg-white/70 shadow-xs origin-bottom" />
                   )}
 
-                  {/* Ondas concêntricas na água */}
+                  {/* Ondas concêntricas na superfície da água */}
                   {(phase === 'waiting' || phase === 'nibbling' || phase === 'biting') && (
-                    <div className="absolute -bottom-2 w-28 h-8 rounded-full border border-white/50 animate-ping pointer-events-none" />
+                    <div className="absolute -bottom-2 w-28 h-8 rounded-full border border-white/40 animate-ping pointer-events-none" />
                   )}
 
                   {phase === 'nibbling' && (
-                    <>
-                      <div className="absolute -top-7 text-white font-mono text-xs bg-[#0e2b1c]/80 px-2 py-0.5 rounded shadow animate-bounce">
-                        Tuc!
-                      </div>
-                    </>
+                    <div className="absolute -top-8 text-white font-mono text-xs bg-[#07241a]/95 border border-[#34d399] px-2.5 py-0.5 rounded-md shadow-lg">
+                      Tuc! (Mordiscando...)
+                    </div>
                   )}
 
                   {phase === 'biting' && (
                     <>
-                      <div className="absolute w-32 h-32 rounded-full bg-[#fbbf24]/40 animate-ping pointer-events-none" />
-                      <div className="absolute -top-12 bg-[#dc2626] text-white text-xs font-mono font-bold px-3 py-1 rounded-full shadow-xl animate-bounce flex items-center gap-1 border-2 border-white">
-                        <Zap className="w-3.5 h-3.5 fill-current" />
-                        <span>FISGUE JÁ!</span>
+                      <div className="absolute -bottom-3 w-36 h-12 rounded-full bg-[#fbbf24]/30 animate-ping pointer-events-none" />
+                      <div className="absolute -top-11 bg-[#dc2626] text-white text-xs font-mono font-bold px-3.5 py-1 rounded-full shadow-2xl flex items-center gap-1.5 border-2 border-white">
+                        <Zap className="w-4 h-4 fill-current" />
+                        <span>PUXE A LINHA!</span>
                       </div>
                     </>
                   )}
 
-                  {phase !== 'idle' && (
+                  {/* Boia Estilizada Pousada na Superfície do Rio */}
+                  {phase !== 'idle' && phase !== 'caught' && (
                     <div
-                      className={`relative transition-all duration-200 cursor-pointer ${
+                      className={`relative transition-all duration-150 cursor-pointer ${
                         phase === 'nibbling'
-                          ? 'translate-y-2 rotate-6'
+                          ? 'translate-y-2 rotate-12 scale-100'
                           : phase === 'biting'
-                          ? 'translate-y-8 scale-95 rotate-12'
+                          ? 'translate-y-8 scale-90 rotate-20 opacity-90'
                           : phase === 'waiting'
-                          ? 'animate-pulse'
+                          ? 'hover:scale-105'
                           : ''
                       }`}
                       onClick={phase === 'biting' ? handleHook : undefined}
+                      title={phase === 'biting' ? 'Clique para fisgar!' : 'Boia na água'}
                     >
-                      <svg width="48" height="60" viewBox="0 0 48 60">
-                        <line x1="24" y1="2" x2="24" y2="16" stroke="#ffffff" strokeWidth="2.5" />
-                        <path d="M12 28 C12 18 36 18 36 28 Z" fill="#e11d48" />
-                        <path d="M12 28 C12 38 36 38 36 28 Z" fill="#ffffff" />
-                        <rect x="11.5" y="26.5" width="25" height="3" fill="#1f2937" />
-                        <line x1="24" y1="38" x2="24" y2="52" stroke="#1f2937" strokeWidth="2" />
+                      {/* Boia clássica vetorizada e nítida */}
+                      <svg width="44" height="54" viewBox="0 0 44 54" className="drop-shadow-lg">
+                        {/* Haste superior da boia onde a linha se prende */}
+                        <line x1="22" y1="2" x2="22" y2="14" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" />
+                        
+                        {/* Topo vermelho da boia */}
+                        <path d="M10 24 C10 14, 34 14, 34 24 Z" fill="#ef4444" stroke="#b91c1c" strokeWidth="1" />
+                        
+                        {/* Faixa preta central */}
+                        <rect x="9.5" y="23" width="25" height="3" fill="#1f2937" rx="0.5" />
+                        
+                        {/* Base branca da boia imersa na água */}
+                        <path d="M10 26 C10 36, 34 36, 34 26 Z" fill="#ffffff" stroke="#d1d5db" strokeWidth="1" />
+                        
+                        {/* Haste inferior subaquática com chumbada */}
+                        <line x1="22" y1="36" x2="22" y2="48" stroke="#1f2937" strokeWidth="2" strokeLinecap="round" />
+                        <circle cx="22" cy="48" r="2.5" fill="#4b5563" />
                       </svg>
+
+                      {/* Ondulação de contato com a água */}
+                      <div className="w-12 h-2.5 bg-[#a3e6cf]/40 rounded-full blur-2xs -mt-1 mx-auto" />
                     </div>
                   )}
 
+                  {/* Peixe Fisgado - Exibição Firme e Estável (SEM ANIMAÇÃO DE PULAR) */}
                   {phase === 'caught' && recentFish && (
-                    <div className="relative z-30 flex flex-col items-center animate-bounce">
-                      <div className="w-48 bg-white/95 rounded-2xl p-3 shadow-2xl border-2 border-[#164a2f] flex flex-col items-center justify-center">
-                        <div className="w-full h-24 rounded-lg overflow-hidden mb-2 bg-[#f0f4ee]">
-                          {recentFish.photo ? (
-                            <img
-                              src={recentFish.photo}
-                              alt={recentFish.name}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <FishVector fish={recentFish} isDiscovered={true} />
-                            </div>
-                          )}
+                    <div className="relative z-30 flex flex-col items-center">
+                      <div className="w-52 bg-white rounded-2xl p-3.5 shadow-2xl border-2 border-[#164a2f] flex flex-col items-center justify-center">
+                        <div className="w-full h-28 rounded-xl overflow-hidden mb-2 bg-gradient-to-b from-[#f8faf9] to-[#edf4f0] border border-[#dbe4dd] flex items-center justify-center p-2">
+                          <FishImageWithLoader
+                            src={recentFish.photo}
+                            alt={recentFish.name}
+                            className="w-full h-full object-contain drop-shadow-md"
+                            fallbackVector={<FishVector fish={recentFish} isDiscovered={true} />}
+                          />
                         </div>
-                        <span className="font-display font-bold text-xs text-[#0e2b1c] truncate max-w-full">
+                        <span className="font-display font-bold text-sm text-[#0e2b1c] truncate max-w-full text-center">
                           {recentFish.name}
                         </span>
+                        <span className="font-mono italic text-[11px] text-[#125575]">
+                          {recentFish.sci}
+                        </span>
                       </div>
-                      <div className="mt-2 text-white font-mono text-xs bg-[#164a2f] px-3 py-1 rounded-full shadow-lg border border-[#34d399] flex items-center gap-1">
-                        <Sparkles className="w-3.5 h-3.5 text-[#fbbf24]" />
-                        <span>Captura Perfeita!</span>
+                      <div className="mt-2 text-white font-mono text-xs bg-[#164a2f] px-3.5 py-1.5 rounded-full shadow-lg border border-[#34d399] flex items-center gap-1.5 font-bold">
+                        <Sparkles className="w-4 h-4 text-[#fbbf24]" />
+                        <span>Captura Registrada!</span>
                       </div>
                     </div>
                   )}
@@ -730,10 +871,11 @@ export const FishingGame: React.FC = () => {
 
                     <div className="w-full h-14 rounded-lg overflow-hidden my-1 bg-gradient-to-b from-[#f8faf9] to-[#edf4f0] border border-[#dbe4dd] flex items-center justify-center p-1">
                       {found && fish.photo ? (
-                        <img
+                        <FishImageWithLoader
                           src={fish.photo}
                           alt={fish.name}
                           className="w-full h-full object-contain drop-shadow-2xs"
+                          fallbackVector={<FishVector fish={fish} isDiscovered={found} />}
                         />
                       ) : (
                         <div className="h-6 w-12 flex items-center justify-center">
@@ -930,17 +1072,12 @@ export const FishingGame: React.FC = () => {
                     onClick={() => openModal(fish)}
                     className="w-full aspect-[16/10] bg-gradient-to-b from-[#f8faf9] to-[#edf4f0] border-b border-[#e9efe9] overflow-hidden flex items-center justify-center p-3 relative group cursor-pointer"
                   >
-                    {fish.photo ? (
-                      <img
-                        src={fish.photo}
-                        alt={fish.name}
-                        className="w-full h-full object-contain drop-shadow-sm transition-transform duration-300 group-hover:scale-105"
-                      />
-                    ) : (
-                      <div className="w-36 h-20">
-                        <FishVector fish={fish} isDiscovered={true} />
-                      </div>
-                    )}
+                    <FishImageWithLoader
+                      src={fish.photo}
+                      alt={fish.name}
+                      className="w-full h-full object-contain drop-shadow-sm transition-transform duration-300 group-hover:scale-105"
+                      fallbackVector={<FishVector fish={fish} isDiscovered={true} />}
+                    />
 
                     <span className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-xs text-white text-[10px] font-mono px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
                       Ampliar Foto
@@ -985,87 +1122,92 @@ export const FishingGame: React.FC = () => {
       {/* Modal de Ficha Científica */}
       {isModalOpen && selectedFish && (
         <div
-          className="fixed inset-0 z-50 bg-[#071d12]/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
+          className="fixed inset-0 z-50 bg-[#071d12]/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
           onClick={() => setIsModalOpen(false)}
         >
           <div
-            className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl relative border border-[#dbe4dd]"
+            className="bg-white rounded-2xl max-w-lg w-full max-h-[92vh] overflow-y-auto shadow-2xl relative border border-[#dbe4dd] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Foto de Destaque no Topo do Modal */}
-            <div className="relative aspect-[16/10] w-full bg-gradient-to-b from-[#0a1f14] to-[#040e09] overflow-hidden flex items-center justify-center p-4">
-              {selectedFish.photo ? (
-                <img
-                  src={selectedFish.photo}
-                  alt={selectedFish.name}
-                  className="w-full h-full object-contain drop-shadow-xl z-10"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center p-4 z-10">
-                  <FishVector fish={selectedFish} isDiscovered={true} />
+            {/* Topo do Modal: Título e Identificação */}
+            <div className="p-4 sm:p-5 border-b border-[#e9efe9] bg-[#fcfdfc] flex items-start justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span
+                    className={`text-[10px] font-mono font-semibold px-2 py-0.5 rounded-md uppercase tracking-wider ${
+                      selectedFish.origem.includes('ameaçada')
+                        ? 'bg-[#fbe8e6] text-[#a13d34] border border-[#f5c6c2]'
+                        : selectedFish.origem.includes('invasora')
+                        ? 'bg-[#fcf3e3] text-[#a3721f] border border-[#f5dcaf]'
+                        : 'bg-[#e6f3ea] text-[#164a2f] border border-[#c4e3cf]'
+                    }`}
+                  >
+                    {selectedFish.origem}
+                  </span>
+                  <span className="text-[11px] font-mono text-[#52705e]">
+                    Rio Pomba
+                  </span>
                 </div>
-              )}
-
-              <div className="absolute inset-0 bg-gradient-to-t from-[#040e09] via-transparent to-transparent pointer-events-none z-15" />
+                <h3 className="text-xl sm:text-2xl font-display font-bold text-[#0e2b1c] leading-tight">
+                  {selectedFish.name}
+                </h3>
+                <p className="text-xs font-mono italic text-[#125575] mt-0.5">
+                  {selectedFish.sci}
+                </p>
+              </div>
 
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="absolute top-4 right-4 text-white bg-black/40 hover:bg-black/60 p-1.5 rounded-lg transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg text-[#52705e] hover:text-[#0e2b1c] hover:bg-[#f0f4ee] transition-colors cursor-pointer shrink-0"
                 aria-label="Fechar"
               >
                 <X className="w-5 h-5" />
               </button>
-
-              <div className="absolute bottom-4 left-6 right-6 text-white">
-                <span className="text-[11px] font-mono uppercase tracking-wider text-[#34d399] font-bold block mb-1">
-                  Espécime do Rio Pomba
-                </span>
-                <h3 className="text-2xl font-display font-semibold">
-                  {selectedFish.name}
-                </h3>
-                <p className="text-xs font-mono italic text-[#cfe3d6]">
-                  {selectedFish.sci}
-                </p>
-              </div>
             </div>
 
-            <div className="p-6 space-y-4 text-xs sm:text-sm">
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#e9efe9] pb-3 text-xs font-mono">
-                <div className="flex items-center gap-1.5">
-                  <span
-                    className={`w-2.5 h-2.5 rounded-full ${
-                      selectedFish.origem.includes('ameaçada')
-                        ? 'bg-[#a13d34]'
-                        : selectedFish.origem.includes('invasora')
-                        ? 'bg-[#a3721f]'
-                        : 'bg-[#2c8a5b]'
-                    }`}
-                  />
-                  <span className="font-semibold text-[#0e2b1c]">
-                    Origem: {selectedFish.origem}
-                  </span>
-                </div>
-                <span className="text-[#6c8074]">
-                  Status: <strong>{selectedFish.conservation}</strong>
-                </span>
+            <div className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1 text-xs sm:text-sm">
+              {/* Foto Realista Dedicada da Espécie (Livre de Qualquer Texto Sobreposto) */}
+              <div className="w-full h-48 sm:h-56 rounded-xl bg-gradient-to-b from-[#f8faf9] to-[#edf4f0] border border-[#dbe4dd] overflow-hidden flex items-center justify-center p-3 shadow-2xs">
+                <FishImageWithLoader
+                  src={selectedFish.photo}
+                  alt={selectedFish.name}
+                  className="w-full h-full object-contain drop-shadow-md"
+                  fallbackVector={
+                    <div className="w-full h-full flex items-center justify-center p-4">
+                      <FishVector fish={selectedFish} isDiscovered={true} />
+                    </div>
+                  }
+                />
               </div>
 
-              <div className="space-y-2.5">
+              {/* Status de Conservação e Dados Biológicos */}
+              <div className="flex flex-wrap items-center justify-between gap-2 bg-[#f6faf7] border border-[#dbe4dd] px-3.5 py-2.5 rounded-xl font-mono text-xs">
+                <span className="text-[#52705e]">
+                  Status de Conservação:
+                </span>
+                <strong className="text-[#0e2b1c]">
+                  {selectedFish.conservation}
+                </strong>
+              </div>
+
+              {/* Curiosidades e Características */}
+              <div className="space-y-2">
                 <strong className="text-[#0e2b1c] font-mono uppercase text-[11px] block tracking-wider">
                   Curiosidades e Características Registradas:
                 </strong>
 
-                <ul className="space-y-2 bg-[#f9fbf9] p-4 rounded-xl border border-[#dbe4dd]">
+                <ul className="space-y-2 bg-[#fbfdfb] p-3.5 sm:p-4 rounded-xl border border-[#dbe4dd]">
                   {selectedFish.curiosidades.map((c, i) => (
                     <li key={i} className="flex gap-2 text-xs sm:text-[13px] text-[#48584f] leading-relaxed">
-                      <span className="text-[#164a2f] font-bold">•</span>
+                      <span className="text-[#164a2f] font-bold shrink-0">•</span>
                       <span>{c}</span>
                     </li>
                   ))}
                 </ul>
               </div>
 
-              <div className="pt-2 flex gap-2">
+              {/* Botões de Ação */}
+              <div className="pt-2 flex gap-2.5">
                 <button
                   onClick={() => setIsModalOpen(false)}
                   className="flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold bg-[#164a2f] text-white hover:bg-[#0e2b1c] transition-colors cursor-pointer"
