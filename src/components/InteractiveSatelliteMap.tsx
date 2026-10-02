@@ -10,6 +10,8 @@ interface InteractiveSatelliteMapProps {
   zoomOnDesktop?: boolean;
 }
 
+const MAP_IMAGE_URL = "https://i.ibb.co/zTcqc9PD/Mapa-pontos-Rio-Pomba-jpg.jpg";
+
 // Coordenadas calibradas dos pontos em relação à imagem do mapa mantidas no código para orientação espacial
 export const SATELLITE_COORDS: Record<PointId, { x: number; y: number }> = {
   p1: { x: 14.32, y: 50.80 },
@@ -122,17 +124,12 @@ export const InteractiveSatelliteMap: React.FC<InteractiveSatelliteMapProps> = (
           >
             <div className="relative w-full block">
               <img
-                src="/mapa.png"
-                alt="Mapa dos pontos de monitoramento do Rio Pomba"
+                src={MAP_IMAGE_URL}
+                alt="Mapa pontos Rio Pomba"
                 loading="eager"
                 decoding="async"
+                referrerPolicy="no-referrer"
                 className="w-full h-auto block pointer-events-none"
-                onError={(e) => {
-                  const target = e.currentTarget;
-                  if (!target.src.includes('i.ibb.co')) {
-                    target.src = 'https://i.ibb.co/zTcqc9PD/Mapa-pontos-Rio-Pomba-jpg.jpg';
-                  }
-                }}
               />
             </div>
           </div>
@@ -232,17 +229,12 @@ export const InteractiveSatelliteMap: React.FC<InteractiveSatelliteMapProps> = (
               >
                 <div className="relative w-full block">
                   <img
-                    src="/mapa.png"
-                    alt="Mapa dos pontos de monitoramento do Rio Pomba"
+                    src={MAP_IMAGE_URL}
+                    alt="Mapa pontos Rio Pomba"
                     loading="eager"
                     decoding="async"
+                    referrerPolicy="no-referrer"
                     className="w-full h-auto block pointer-events-none"
-                    onError={(e) => {
-                      const target = e.currentTarget;
-                      if (!target.src.includes('i.ibb.co')) {
-                        target.src = 'https://i.ibb.co/zTcqc9PD/Mapa-pontos-Rio-Pomba-jpg.jpg';
-                      }
-                    }}
                   />
 
                   {/* Zonas de clique sobre cada ponto quando o mapa estiver sem zoom */}
@@ -313,17 +305,12 @@ export const InteractiveSatelliteMap: React.FC<InteractiveSatelliteMapProps> = (
           <div className="w-full rounded-xl sm:rounded-2xl overflow-hidden bg-white border border-neutral-200 shadow-sm select-none">
             <div className="relative w-full block">
               <img
-                src="/mapa.png"
-                alt="Mapa dos pontos de monitoramento do Rio Pomba"
+                src={MAP_IMAGE_URL}
+                alt="Mapa pontos Rio Pomba"
                 loading="eager"
                 decoding="async"
+                referrerPolicy="no-referrer"
                 className="w-full h-auto block pointer-events-none"
-                onError={(e) => {
-                  const target = e.currentTarget;
-                  if (!target.src.includes('i.ibb.co')) {
-                    target.src = 'https://i.ibb.co/zTcqc9PD/Mapa-pontos-Rio-Pomba-jpg.jpg';
-                  }
-                }}
               />
 
               {/* Zonas de clique invisíveis mantidas sobre as coordenadas para manter orientação e seleção funcional */}
