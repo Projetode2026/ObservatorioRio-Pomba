@@ -5,6 +5,7 @@ import { POINTS } from '../data/riverData';
 import { ArrowRight, MapPin } from 'lucide-react';
 import { LiquidMarquee } from './LiquidMarquee';
 import { InteractiveSatelliteMap } from './InteractiveSatelliteMap';
+import { WaterRipple, WaterRippleFilter } from './WaterRippleEffect';
 
 interface HomeViewProps {
   onNavigate: (tab: ViewTab, param?: any, point?: PointId) => void;
@@ -13,6 +14,9 @@ interface HomeViewProps {
 export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
   return (
     <div className="space-y-0 -mx-4 sm:-mx-6 lg:-mx-8 -mt-8 sm:-mt-10">
+      {/* Filtro SVG de Refração e Ondulação de Água (feTurbulence + feDisplacementMap) */}
+      <WaterRippleFilter />
+
       <style>{`
         @keyframes riverFlow {
           0% { background-position: 0% 50%; }
@@ -40,9 +44,9 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
               Monitoramento da Qualidade da Água
             </span>
 
-            <h1 className="font-display text-3xl sm:text-5xl lg:text-[54px] font-semibold text-white leading-[1.14]">
+            <WaterRipple as="h1" className="font-display text-3xl sm:text-5xl lg:text-[54px] font-semibold text-white leading-[1.14] rounded-lg p-1 -m-1">
               O Rio Pomba, observado de perto
-            </h1>
+            </WaterRipple>
 
             <p className="text-[15px] sm:text-[17px] text-[#a3c3b0] leading-relaxed max-w-2xl font-sans">
               Acompanhamento sistemático dos parâmetros físico-químicos e microbiológicos da água ao longo dos 5 pontos de monitoramento do Rio Pomba na Zona da Mata mineira.
@@ -94,10 +98,10 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
               <span className="font-mono text-xs text-[#125575] uppercase tracking-wider font-semibold block">
                 Mapeamento Espacial
               </span>
-              <h3 className="font-display font-bold text-xl sm:text-2xl text-[#0e2b1c] mt-0.5 flex items-center gap-2">
+              <WaterRipple as="h3" className="font-display font-bold text-xl sm:text-2xl text-[#0e2b1c] mt-0.5 inline-flex items-center gap-2 p-1 -m-1 rounded-lg">
                 <MapPin className="w-5 h-5 text-[#164a2f]" />
                 <span>Mapa dos Pontos de Monitoramento</span>
-              </h3>
+              </WaterRipple>
             </div>
             <span className="text-xs font-mono text-[#52705e] bg-[#f0f4ee] px-3 py-1 rounded-md self-start sm:self-auto border border-[#dbe4dd]">
               Rio Pomba · 5 Pontos de Monitoramento
@@ -113,7 +117,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
             <span>Localização geográfica das 5 estações de coleta ao longo da calha do rio</span>
             <button
               onClick={() => onNavigate('mapa')}
-              className="text-[#164a2f] font-semibold hover:underline inline-flex items-center gap-1 cursor-pointer"
+              className="text-[#164a2f] font-semibold hover:underline inline-flex items-center gap-1 cursor-pointer px-2 py-1 rounded-md"
             >
               <span>Ver detalhes na aba Mapa</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -129,9 +133,9 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
             <span className="font-mono text-xs text-[#125575] uppercase tracking-wider font-semibold block">
               Panorama atual
             </span>
-            <h2 className="font-display text-2xl sm:text-3xl font-semibold text-[#0e2b1c] mt-1">
+            <WaterRipple as="h2" className="font-display text-2xl sm:text-3xl font-semibold text-[#0e2b1c] mt-1 p-1 -m-1 rounded-lg inline-block">
               Resultados da 1ª Coleta nos 5 Pontos
-            </h2>
+            </WaterRipple>
           </div>
 
           <button
@@ -220,9 +224,9 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
               <span className="font-mono text-xs text-[#125575] uppercase tracking-wider font-semibold block">
                 Rede Hidrográfica
               </span>
-              <h2 className="font-display text-2xl sm:text-4xl font-semibold text-[#0e2b1c]">
+              <WaterRipple as="h2" className="font-display text-2xl sm:text-4xl font-semibold text-[#0e2b1c] p-1 -m-1 rounded-lg inline-block">
                 Os 5 Pontos de Monitoramento
-              </h2>
+              </WaterRipple>
               <p className="text-xs sm:text-[15px] text-[#48584f] leading-relaxed">
                 O observatório acompanha o trecho do Rio Pomba através de coletas analíticas sistemáticas em estações estratégicas, avaliando o perfil da água desde as áreas rurais até trechos urbanos.
               </p>
@@ -262,3 +266,4 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
     </div>
   );
 };
+

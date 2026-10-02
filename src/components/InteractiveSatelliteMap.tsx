@@ -10,7 +10,7 @@ interface InteractiveSatelliteMapProps {
   zoomOnDesktop?: boolean;
 }
 
-const MAP_IMAGE_URL = "https://i.ibb.co/zTcqc9PD/Mapa-pontos-Rio-Pomba-jpg.jpg";
+const MAP_IMAGE_URL = "https://i.ibb.co/p6MTqPZt/mapa.jpg";
 
 // Coordenadas calibradas dos pontos em relação à imagem do mapa mantidas no código para orientação espacial
 export const SATELLITE_COORDS: Record<PointId, { x: number; y: number }> = {
@@ -125,11 +125,17 @@ export const InteractiveSatelliteMap: React.FC<InteractiveSatelliteMapProps> = (
             <div className="relative w-full block">
               <img
                 src={MAP_IMAGE_URL}
-                alt="Mapa pontos Rio Pomba"
+                alt="mapa"
                 loading="eager"
                 decoding="async"
                 referrerPolicy="no-referrer"
                 className="w-full h-auto block pointer-events-none"
+                onError={(e) => {
+                  const target = e.currentTarget;
+                  if (!target.src.includes('mapa.jpeg')) {
+                    target.src = '/mapa.jpeg';
+                  }
+                }}
               />
             </div>
           </div>
@@ -230,11 +236,17 @@ export const InteractiveSatelliteMap: React.FC<InteractiveSatelliteMapProps> = (
                 <div className="relative w-full block">
                   <img
                     src={MAP_IMAGE_URL}
-                    alt="Mapa pontos Rio Pomba"
+                    alt="mapa"
                     loading="eager"
                     decoding="async"
                     referrerPolicy="no-referrer"
                     className="w-full h-auto block pointer-events-none"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      if (!target.src.includes('mapa.jpeg')) {
+                        target.src = '/mapa.jpeg';
+                      }
+                    }}
                   />
 
                   {/* Zonas de clique sobre cada ponto quando o mapa estiver sem zoom */}
@@ -306,11 +318,17 @@ export const InteractiveSatelliteMap: React.FC<InteractiveSatelliteMapProps> = (
             <div className="relative w-full block">
               <img
                 src={MAP_IMAGE_URL}
-                alt="Mapa pontos Rio Pomba"
+                alt="mapa"
                 loading="eager"
                 decoding="async"
                 referrerPolicy="no-referrer"
                 className="w-full h-auto block pointer-events-none"
+                onError={(e) => {
+                  const target = e.currentTarget;
+                  if (!target.src.includes('mapa.jpeg')) {
+                    target.src = '/mapa.jpeg';
+                  }
+                }}
               />
 
               {/* Zonas de clique invisíveis mantidas sobre as coordenadas para manter orientação e seleção funcional */}
