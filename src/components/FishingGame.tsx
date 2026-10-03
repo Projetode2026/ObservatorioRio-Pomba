@@ -261,10 +261,20 @@ export const FishingGame: React.FC = () => {
   const biteWindowRef = useRef<number | null>(null);
   const tensionIntervalRef = useRef<number | null>(null);
   const targetFishRef = useRef<Fish | null>(null);
+  const fishingBoxRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     sfx.enabled = audioEnabled;
   }, [audioEnabled]);
+
+  // Garante que o cenário e os botões de ação fiquem sempre visíveis no celular após fisgar
+  useEffect(() => {
+    if (phase === 'caught' || phase === 'biting') {
+      if (fishingBoxRef.current && window.innerWidth < 640) {
+        fishingBoxRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+  }, [phase]);
 
   useEffect(() => {
     return () => {
@@ -511,7 +521,10 @@ export const FishingGame: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
           {/* Cenário de Água Clara e Realista do Rio Pomba */}
           <div className="lg:col-span-7 space-y-4">
-            <div className="relative rounded-2xl overflow-hidden h-[390px] sm:h-[470px] bg-[#1a6452] shadow-lg border-2 border-[#52a382] select-none flex flex-col justify-between p-3.5 sm:p-5">
+            <div
+              ref={fishingBoxRef}
+              className="relative rounded-2xl overflow-hidden min-h-[460px] sm:min-h-[490px] h-auto bg-[#1a6452] shadow-lg border-2 border-[#52a382] select-none flex flex-col justify-between p-3 sm:p-5"
+            >
               {/* Imagem de Fundo de Água Clara e Transparente com Luz Solar */}
               <div className="absolute inset-0 pointer-events-none overflow-hidden">
                 <img
@@ -715,9 +728,13 @@ export const FishingGame: React.FC = () => {
 
                   {/* Peixe Fisgado - Exibição Firme e Estável (SEM ANIMAÇÃO DE PULAR) */}
                   {phase === 'caught' && recentFish && (
-                    <div className="relative z-30 flex flex-col items-center">
-                      <div className="w-52 bg-white rounded-2xl p-3.5 shadow-2xl border-2 border-[#164a2f] flex flex-col items-center justify-center">
-                        <div className="w-full h-28 rounded-xl overflow-hidden mb-2 bg-gradient-to-b from-[#f8faf9] to-[#edf4f0] border border-[#dbe4dd] flex items-center justify-center p-2">
+                    <div
+                      onClick={handleCast}
+                      className="relative z-30 flex flex-col items-center cursor-pointer group touch-manipulation my-auto py-1"
+                      title="Clique para lançar nova linha"
+                    >
+                      <div className="w-48 sm:w-56 bg-white rounded-2xl p-2.5 sm:p-3.5 shadow-2xl border-2 border-[#164a2f] flex flex-col items-center justify-center transition-transform group-hover:scale-102">
+                        <div className="w-full h-20 sm:h-28 rounded-xl overflow-hidden mb-1.5 sm:mb-2 bg-gradient-to-b from-[#f8faf9] to-[#edf4f0] border border-[#dbe4dd] flex items-center justify-center p-2">
                           <FishImageWithLoader
                             src={recentFish.photo}
                             alt={recentFish.name}
@@ -725,15 +742,15 @@ export const FishingGame: React.FC = () => {
                             fallbackVector={<FishVector fish={recentFish} isDiscovered={true} />}
                           />
                         </div>
-                        <span className="font-display font-bold text-sm text-[#0e2b1c] truncate max-w-full text-center">
+                        <span className="font-display font-bold text-xs sm:text-sm text-[#0e2b1c] truncate max-w-full text-center">
                           {recentFish.name}
                         </span>
-                        <span className="font-mono italic text-[11px] text-[#125575]">
+                        <span className="font-mono italic text-[10px] sm:text-[11px] text-[#125575]">
                           {recentFish.sci}
                         </span>
                       </div>
-                      <div className="mt-2 text-white font-mono text-xs bg-[#164a2f] px-3.5 py-1.5 rounded-full shadow-lg border border-[#34d399] flex items-center gap-1.5 font-bold">
-                        <Sparkles className="w-4 h-4 text-[#fbbf24]" />
+                      <div className="mt-1.5 text-white font-mono text-[10px] sm:text-xs bg-[#164a2f] px-3 py-1 rounded-full shadow-lg border border-[#34d399] flex items-center gap-1.5 font-bold">
+                        <Sparkles className="w-3.5 h-3.5 text-[#fbbf24]" />
                         <span>Captura Registrada!</span>
                       </div>
                     </div>
@@ -742,12 +759,12 @@ export const FishingGame: React.FC = () => {
               </div>
 
               {/* CONTROLES INFERIORES */}
-              <div className="relative z-20 space-y-3">
-                <div className="bg-white/95 backdrop-blur-md text-[#0e2b1c] px-4 py-2.5 rounded-xl text-xs sm:text-sm font-mono text-center shadow-lg border border-[#c4e3cf] max-w-lg mx-auto">
+              <div className="relative z-20 space-y-2 sm:space-y-3 mt-2 sm:mt-auto shrink-0 w-full">
+                <div className="bg-white/95 backdrop-blur-md text-[#0e2b1c] px-3.5 py-2 sm:py-2.5 rounded-xl text-[11px] sm:text-sm font-mono text-center shadow-lg border border-[#c4e3cf] max-w-lg mx-auto leading-tight">
                   {message}
                 </div>
 
-                <div className="flex items-center justify-center gap-3">
+                <div className="flex items-center justify-center gap-3 w-full">
                   {phase === 'idle' && (
                     <button
                       onClick={handleCast}
@@ -800,9 +817,9 @@ export const FishingGame: React.FC = () => {
                   {(phase === 'caught' || phase === 'escaped') && (
                     <button
                       onClick={handleCast}
-                      className="w-full sm:w-auto py-3.5 px-8 rounded-xl font-display font-bold text-xs sm:text-sm bg-[#164a2f] text-white hover:bg-[#0e2b1c] transition-all cursor-pointer shadow-lg flex items-center justify-center gap-2 touch-manipulation"
+                      className="w-full sm:w-auto py-3.5 px-8 rounded-xl font-display font-bold text-xs sm:text-sm bg-[#34d399] text-[#05100a] hover:bg-[#10b981] transition-all cursor-pointer shadow-xl flex items-center justify-center gap-2 hover:scale-102 active:scale-98 touch-manipulation border-2 border-white/40 ring-4 ring-[#164a2f]/20"
                     >
-                      <Waves className="w-4 h-4 text-[#34d399]" />
+                      <Waves className="w-4 h-4 text-[#05100a]" />
                       <span>Lançar Nova Linha</span>
                     </button>
                   )}

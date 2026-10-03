@@ -109,9 +109,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onNavigate }) => {
           </div>
 
           {/* Componente Interativo com Marcadores nos Locais Exatos */}
-          <InteractiveSatelliteMap
-            onSelectPoint={(ptId) => onNavigate('mapa', undefined, ptId)}
-          />
+          <InteractiveSatelliteMap />
 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs font-mono text-[#52705e] pt-1">
             <span>Localização geográfica das 5 estações de coleta ao longo da calha do rio</span>

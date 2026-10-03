@@ -62,12 +62,14 @@ export const InteractiveSatelliteMap: React.FC<InteractiveSatelliteMapProps> = (
   };
 
   const handlePrev = (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     const prevIndex = (currentIndex - 1 + POINT_IDS.length) % POINT_IDS.length;
     handleSelect(POINT_IDS[prevIndex]);
   };
 
   const handleNext = (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     const nextIndex = (currentIndex + 1) % POINT_IDS.length;
     handleSelect(POINT_IDS[nextIndex]);
