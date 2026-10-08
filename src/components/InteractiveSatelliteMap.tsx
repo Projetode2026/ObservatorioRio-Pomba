@@ -354,17 +354,14 @@ export const InteractiveSatelliteMap: React.FC<InteractiveSatelliteMapProps> = (
                       e.stopPropagation();
                       handleSelect(p.id);
                     }}
-                    className="group absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer z-20 touch-manipulation w-14 h-14 p-0 bg-transparent border-0 outline-none flex items-center justify-center"
+                    className="absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer z-20 touch-manipulation w-14 h-14 p-0 bg-transparent border-0 outline-none opacity-0"
                     style={{
                       left: `${pos.x}%`,
                       top: `${pos.y}%`,
                     }}
                     title={`Ponto ${p.order}: ${p.name} - Clique para ver no mapa`}
                     aria-label={`Ponto ${p.order}: ${p.name}`}
-                  >
-                    {/* Alvo indicador sutil visível no hover no PC */}
-                    <span className="w-8 h-8 rounded-full border-2 border-emerald-400 bg-emerald-400/20 opacity-0 group-hover:opacity-100 transition-all scale-75 group-hover:scale-100 pointer-events-none shadow-sm" />
-                  </button>
+                  />
                 );
               })}
             </div>
