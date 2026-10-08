@@ -18,9 +18,14 @@ export const Footer: React.FC<FooterProps> = () => {
           </span>
         </div>
 
-        <p className="text-xs font-mono text-[#52705e] max-w-md leading-relaxed">
-          Dados analíticos obtidos em ensaios laboratoriais e relatórios ambientais da bacia do Rio Pomba.
-        </p>
+        <div className="flex flex-col sm:items-end text-left sm:text-right gap-1.5">
+          <p className="text-xs font-mono text-[#52705e] max-w-md leading-relaxed">
+            Dados analíticos obtidos em ensaios laboratoriais e relatórios ambientais da bacia do Rio Pomba.
+          </p>
+          <span className="text-xs font-mono text-[#446050]">
+            Desenvolvimento do site: <strong className="text-[#0e2b1c] font-semibold">Paulo Jorge de Assis Silva</strong>
+          </span>
+        </div>
       </div>
     </footer>
   );

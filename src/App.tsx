@@ -10,7 +10,7 @@ import { PointId, ParamKey } from './types';
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState<ViewTab>('inicio');
-  const [selectedPointId, setSelectedPointId] = useState<PointId>('p2');
+  const [selectedPointId, setSelectedPointId] = useState<PointId>('p1');
   const [selectedParamKey, setSelectedParamKey] = useState<ParamKey>('ph');
 
   const handleNavigate = (tab: ViewTab, param?: ParamKey, point?: PointId) => {
